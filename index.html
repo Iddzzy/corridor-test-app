@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Corridor Tester</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --dark: #2c3e50;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 20px; background-color: #f4f7f6;
+        }
+        .container { max-width: 500px; margin: auto; }
+        h2 { text-align: center; color: var(--dark); }
+        
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--dark); }
+        input, textarea { 
+            width: 100%; margin-bottom: 15px; padding: 12px; 
+            border: 1px solid #ccc; border-radius: 8px; font-size: 16px; /* 16px prevents iOS zoom */
+        }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        
+        button { 
+            padding: 15px; font-size: 1rem; font-weight: bold; 
+            border: none; border-radius: 8px; color: white; transition: opacity 0.2s;
+        }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        
+        .btn-start { background-color: var(--danger); }
+        .btn-stop { background-color: var(--dark); }
+        .btn-save { background-color: var(--success); width: 100%; }
+
+        #status { text-align: center; font-weight: bold; margin-bottom: 10px; height: 1.2em; }
+        .recording { color: var(--danger); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Corridor Test</h2>
+    
+    <div id="status">Ready</div>
+
+    <label>Test Question</label>
+    <input type="text" id="question" placeholder="Enter question here...">
+
+    <label>Participant Response</label>
+    <textarea id="answer" rows="6" placeholder="Take notes here..."></textarea>
+
+    <div class="controls">
+        <button id="startBtn" class="btn-start">⏺ Start Record</button>
+        <button id="stopBtn" class="btn-stop" disabled>⏹ Stop</button>
+    </div>
+
+    <button id="saveBtn" class="btn-save">💾 Save Session (Download)</button>
+</div>
+
+<script>
+    let mediaRecorder;
+    let chunks = [];
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const status = document.getElementById('status');
+
+    startBtn.onclick = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            chunks = [];
+
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                status.innerText = "Recording captured";
+                status.classList.remove('recording');
+            };
+
+            mediaRecorder.start();
+            status.innerText = "● Recording...";
+            status.classList.add('recording');
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        } catch (err) {
+            alert("Microphone access denied or not supported on this connection (Try HTTPS).");
+        }
+    };
+
+    stopBtn.onclick = () => {
+        mediaRecorder.stop();
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+    };
+
+    saveBtn.onclick = () => {
+        const q = document.getElementById('question').value || 'untitled';
+        const a = document.getElementById('answer').value;
+        const time = new Date().toLocaleTimeString().replace(/ /g, '');
+
+        // Save Notes
+        const blobText = new Blob([`Q: ${q}\n\nA: ${a}`], { type: 'text/plain' });
+        download(blobText, `Notes_${time}.txt`);
+
+        // Save Audio
+        if (chunks.length > 0) {
+            const blobAudio = new Blob(chunks, { type: 'audio/webm' });
+            download(blobAudio, `Audio_${time}.webm`);
+        }
+    };
+
+    function download(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+</script>
+
+</body>
+</html>
