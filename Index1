@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corridor Test Pro - AutoSave</title>
+    <style>
+        :root { --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; --dark: #2c3e50; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f8f9fa; color: var(--dark); }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #setup-area { border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        .q-display { font-size: 1.2rem; font-weight: bold; margin: 15px 0; min-height: 50px; color: var(--primary); background: #ebf5fb; padding: 10px; border-radius: 8px; }
+        input, textarea { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        button { padding: 15px; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; }
+        .btn-add { background: var(--dark); width: 100%; }
+        .btn-nav { background: #95a5a6; }
+        .btn-record { background: var(--danger); }
+        .btn-stop { background: var(--dark); }
+        .btn-save { background: var(--success); width: 100%; margin-top: 15px; }
+        .status { text-align: center; font-weight: bold; height: 20px; margin-bottom: 10px; }
+        .recording { color: var(--danger); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+<div class="card" id="setup-area">
+    <h3>1. Setup Questions</h3>
+    <input type="text" id="newQ" placeholder="Enter a question...">
+    <button class="btn-add" onclick="addQuestion()">+ Add to List</button>
+    <p><small>Saved Questions: <span id="qCount">0</span></small> | <button onclick="clearQuestions()" style="color:red; background:none; border:none; padding:0; cursor:pointer;">Clear All</button></p>
+</div>
+
+<div class="card">
+    <h3>2. Interview Mode</h3>
+    <div id="recordStatus" class="status">Ready</div>
+    
+    <div class="q-display" id="currentQuestionDisplay">No questions added yet.</div>
+    
+    <div class="controls">
+        <button class="btn-nav" onclick="prevQ()">← Previous</button>
+        <button class="btn-nav" onclick="nextQ()">Next →</button>
+    </div>
+
+    <textarea id="notes" rows="5" placeholder="Type answer for THIS question here..."></textarea>
+
+    <div class="controls">
+        <button id="startBtn" class="btn-record" onclick="startRecording()">⏺ Start Audio</button>
+        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>⏹ Stop</button>
+    </div>
+
+    <button class="btn-save" onclick="finalSave()">💾 Finish & Download All Data</button>
+</div>
+
+<script>
+    let questions = JSON.parse(localStorage.getItem('testQuestions')) || [];
+    let sessionAnswers = {}; // To store answers by question index
+    let currentIndex = 0;
+    let mediaRecorder;
+    let chunks = [];
+
+    function updateDisplay() {
+        const display = document.getElementById('currentQuestionDisplay');
+        document.getElementById('qCount').innerText = questions.length;
+
+        if (questions.length > 0) {
+            display.innerText = `Question ${currentIndex + 1}: ${questions[currentIndex]}`;
+            // Reload notes if they exist for this question
+            document.getElementById('notes').value = sessionAnswers[currentIndex] || "";
+        } else {
+            display.innerText = "No questions added yet.";
+        }
+    }
+
+    function addQuestion() {
+        const input = document.getElementById('newQ');
+        if (input.value.trim() !== "") {
+            questions.push(input.value.trim());
+            localStorage.setItem('testQuestions', JSON.stringify(questions));
+            input.value = "";
+            updateDisplay();
+        }
+    }
+
+    function clearQuestions() {
+        if(confirm("Clear all questions?")) {
+            questions = [];
+            localStorage.removeItem('testQuestions');
+            sessionAnswers = {};
+            currentIndex = 0;
+            updateDisplay();
+        }
+    }
+
+    function nextQ() {
+        saveCurrentNote();
+        if (currentIndex < questions.length - 1) {
+            currentIndex++;
+            updateDisplay();
+        }
+    }
+
+    function prevQ() {
+        saveCurrentNote();
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateDisplay();
+        }
+    }
+
+    function saveCurrentNote() {
+        const note = document.getElementById('notes').value;
+        if (note.trim() !== "") {
+            sessionAnswers[currentIndex] = note;
+        }
+    }
+
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            chunks = [];
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                document.getElementById('recordStatus').innerText = "Recording Cached";
+                document.getElementById('recordStatus').classList.remove('recording');
+            };
+            mediaRecorder.start();
+            document.getElementById('recordStatus').innerText = "● RECORDING...";
+            document.getElementById('recordStatus').classList.add('recording');
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+        } catch (err) { alert("Mic error. Ensure you are using HTTPS."); }
+    }
+
+    function stopRecording() {
+        mediaRecorder.stop();
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+    }
+
+    function finalSave() {
+        saveCurrentNote(); // Catch the last one
+        
+        let fullReport = "--- CORRIDOR TEST SESSION REPORT ---\n";
+        fullReport += "Date: " + new Date().toLocaleString() + "\n\n";
+
+        questions.forEach((q, index) => {
+            const ans = sessionAnswers[index] || "[No answer recorded]";
+            fullReport += `QUESTION ${index + 1}: ${q}\n`;
+            fullReport += `ANSWER: ${ans}\n`;
+            fullReport += `------------------------------------\n\n`;
+        });
+
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        
+        // Download Report
+        const textBlob = new Blob([fullReport], { type: 'text/plain' });
+        download(textBlob, `Session_Report_${ts}.txt`);
+
+        // Download Audio
+        if (chunks.length > 0) {
+            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+            download(audioBlob, `Session_Audio_${ts}.webm`);
+        }
+    }
+
+    function download(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
+
+    updateDisplay();
+</script>
+
+</body>
+</html>
