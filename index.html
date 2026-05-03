@@ -3,166 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corridor Test Pro - AutoSave</title>
+    <title>Corridor Test Pro</title>
     <style>
-        :root { --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; --dark: #2c3e50; }
-        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f8f9fa; color: var(--dark); }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        #setup-area { border-bottom: 2px solid #eee; padding-bottom: 20px; }
-        .q-display { font-size: 1.2rem; font-weight: bold; margin: 15px 0; min-height: 50px; color: var(--primary); background: #ebf5fb; padding: 10px; border-radius: 8px; }
-        input, textarea { width: 100%; margin-bottom: 10px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-        button { padding: 15px; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; }
-        .btn-add { background: var(--dark); width: 100%; }
-        .btn-nav { background: #95a5a6; }
-        .btn-record { background: var(--danger); }
-        .btn-stop { background: var(--dark); }
-        .btn-save { background: var(--success); width: 100%; margin-top: 15px; }
-        .status { text-align: center; font-weight: bold; height: 20px; margin-bottom: 10px; }
-        .recording { color: var(--danger); animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.3; } }
+        :root { --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; --dark: #2c3e50; --light: #ecf0f1; }
+        body { font-family: sans-serif; margin: 0; background: var(--light); color: var(--dark); }
+        .view { display: none; padding: 20px; max-width: 600px; margin: auto; }
+        .active { display: block; }
+        
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h1, h2 { text-align: center; }
+        
+        button { padding: 15px; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; margin: 5px 0; width: 100%; font-size: 1rem; }
+        .btn-main { background: var(--primary); }
+        .btn-alt { background: var(--dark); }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+        .btn-back { background: #95a5a6; margin-bottom: 20px; }
+
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .project-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        
+        .option-input { display: flex; gap: 5px; }
+        .question-preview { border-left: 4px solid var(--primary); padding-left: 10px; margin: 10px 0; background: #f9f9f9; }
+        
+        /* Interview styles */
+        .q-text { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: block;}
+        .choice-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 5px; }
+        .choice-row input { width: auto; margin: 0; }
+        #recordStatus { text-align: center; font-weight: bold; color: var(--danger); height: 20px; }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-<div class="card" id="setup-area">
-    <h3>1. Setup Questions</h3>
-    <input type="text" id="newQ" placeholder="Enter a question...">
-    <button class="btn-add" onclick="addQuestion()">+ Add to List</button>
-    <p><small>Saved Questions: <span id="qCount">0</span></small> | <button onclick="clearQuestions()" style="color:red; background:none; border:none; padding:0; cursor:pointer;">Clear All</button></p>
+<div id="view-main" class="view active">
+    <h1>Welcome To Corridor Test</h1>
+    <button class="btn-main" onclick="showView('view-projects-start')">Start Corridor Test</button>
+    <button class="btn-alt" onclick="showView('view-settings')">Settings</button>
 </div>
 
-<div class="card">
-    <h3>2. Interview Mode</h3>
-    <div id="recordStatus" class="status">Ready</div>
+<div id="view-settings" class="view">
+    <button class="btn-back" onclick="showView('view-main')">← Back</button>
+    <h2>Projects</h2>
+    <div id="project-list" class="card"></div>
+    <button class="btn-success" onclick="prepareNewProject()">+ Add New Project</button>
+</div>
+
+<div id="view-editor" class="view">
+    <button class="btn-back" onclick="showView('view-settings')">← Cancel</button>
+    <h2 id="editor-title">New Project</h2>
+    <input type="text" id="proj-name" placeholder="Project Name">
     
-    <div class="q-display" id="currentQuestionDisplay">No questions added yet.</div>
-    
-    <div class="controls">
-        <button class="btn-nav" onclick="prevQ()">← Previous</button>
-        <button class="btn-nav" onclick="nextQ()">Next →</button>
+    <div class="card">
+        <h4>Add Question</h4>
+        <input type="text" id="q-text" placeholder="Question Text">
+        <select id="q-type" onchange="toggleOptions()">
+            <option value="text">Plain Text</option>
+            <option value="radio">Radio Button (Single Selection)</option>
+            <option value="checkbox">Checkbox (Multiple Selection)</option>
+        </select>
+        <div id="options-area" style="display:none;">
+            <input type="text" class="opt-val" placeholder="Option 1">
+            <input type="text" class="opt-val" placeholder="Option 2">
+        </div>
+        <button class="btn-alt" onclick="addQuestionToProject()">Add Question</button>
     </div>
 
-    <textarea id="notes" rows="5" placeholder="Type answer for THIS question here..."></textarea>
+    <div id="questions-preview"></div>
+    <button class="btn-success" onclick="saveProject()">Save Full Project</button>
+</div>
 
-    <div class="controls">
-        <button id="startBtn" class="btn-record" onclick="startRecording()">⏺ Start Audio</button>
-        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>⏹ Stop</button>
+<div id="view-projects-start" class="view">
+    <button class="btn-back" onclick="showView('view-main')">← Back</button>
+    <h2>Select Project</h2>
+    <div id="start-project-list"></div>
+</div>
+
+<div id="view-interview" class="view">
+    <div id="recordStatus"></div>
+    <h3 id="active-project-name">Interview</h3>
+    <div class="card">
+        <div id="interview-container"></div>
     </div>
-
-    <button class="btn-save" onclick="finalSave()">💾 Finish & Download All Data</button>
+    
+    <div style="display:flex; gap:10px;">
+        <button id="startRec" class="btn-danger" onclick="startAudio()">⏺ Record</button>
+        <button id="stopRec" class="btn-alt" onclick="stopAudio()" disabled>⏹ Stop</button>
+    </div>
+    <button class="btn-success" onclick="finishInterview()">💾 Save & Download Session</button>
 </div>
 
 <script>
-    let questions = JSON.parse(localStorage.getItem('testQuestions')) || [];
-    let sessionAnswers = {}; // To store answers by question index
-    let currentIndex = 0;
+    let projects = JSON.parse(localStorage.getItem('cp_projects')) || [];
+    let currentEditingProject = { name: '', questions: [] };
+    let activeInterviewProject = null;
     let mediaRecorder;
-    let chunks = [];
+    let audioChunks = [];
 
-    function updateDisplay() {
-        const display = document.getElementById('currentQuestionDisplay');
-        document.getElementById('qCount').innerText = questions.length;
+    // --- NAVIGATION ---
+    function showView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'view-settings') renderProjectList();
+        if(id === 'view-projects-start') renderStartList();
+    }
 
-        if (questions.length > 0) {
-            display.innerText = `Question ${currentIndex + 1}: ${questions[currentIndex]}`;
-            // Reload notes if they exist for this question
-            document.getElementById('notes').value = sessionAnswers[currentIndex] || "";
-        } else {
-            display.innerText = "No questions added yet.";
+    // --- PROJECT EDITOR LOGIC ---
+    function prepareNewProject() {
+        currentEditingProject = { name: '', questions: [], date: new Date().toLocaleDateString() };
+        document.getElementById('proj-name').value = '';
+        document.getElementById('questions-preview').innerHTML = '';
+        showView('view-editor');
+    }
+
+    function toggleOptions() {
+        const type = document.getElementById('q-type').value;
+        document.getElementById('options-area').style.display = (type !== 'text') ? 'block' : 'none';
+    }
+
+    function addQuestionToProject() {
+        const text = document.getElementById('q-text').value;
+        const type = document.getElementById('q-type').value;
+        let options = [];
+        if(type !== 'text') {
+            document.querySelectorAll('.opt-val').forEach(i => { if(i.value) options.push(i.value) });
+        }
+        currentEditingProject.questions.push({ text, type, options });
+        renderQuestionPreview();
+        document.getElementById('q-text').value = '';
+    }
+
+    function renderQuestionPreview() {
+        const container = document.getElementById('questions-preview');
+        container.innerHTML = '<h4>Questions Added:</h4>';
+        currentEditingProject.questions.forEach((q, idx) => {
+            container.innerHTML += `<div class="question-preview">
+                <b>${idx+1}. ${q.text}</b> (${q.type}) 
+                <button onclick="removeQ(${idx})" style="width:auto; padding:2px 5px; background:red;">Del</button>
+            </div>`;
+        });
+    }
+
+    function removeQ(idx) { currentEditingProject.questions.splice(idx, 1); renderQuestionPreview(); }
+
+    function saveProject() {
+        currentEditingProject.name = document.getElementById('proj-name').value || "Untitled Project";
+        projects.push(currentEditingProject);
+        localStorage.setItem('cp_projects', JSON.stringify(projects));
+        showView('view-settings');
+    }
+
+    // --- LIST RENDERING ---
+    function renderProjectList() {
+        const list = document.getElementById('project-list');
+        list.innerHTML = projects.length ? '' : 'No projects found.';
+        projects.forEach((p, idx) => {
+            list.innerHTML += `
+                <div class="project-item">
+                    <div><b>${p.name}</b><br><small>${p.date}</small></div>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="deleteProject(${idx})" class="btn-danger" style="width:auto;">Delete</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function renderStartList() {
+        const list = document.getElementById('start-project-list');
+        list.innerHTML = '';
+        projects.forEach((p, idx) => {
+            list.innerHTML += `<button class="btn-main" onclick="startInterview(${idx})">${p.name}</button>`;
+        });
+    }
+
+    function deleteProject(idx) {
+        if(confirm("Delete this project?")) {
+            projects.splice(idx, 1);
+            localStorage.setItem('cp_projects', JSON.stringify(projects));
+            renderProjectList();
         }
     }
 
-    function addQuestion() {
-        const input = document.getElementById('newQ');
-        if (input.value.trim() !== "") {
-            questions.push(input.value.trim());
-            localStorage.setItem('testQuestions', JSON.stringify(questions));
-            input.value = "";
-            updateDisplay();
-        }
+    // --- INTERVIEW ENGINE ---
+    function startInterview(idx) {
+        activeInterviewProject = projects[idx];
+        document.getElementById('active-project-name').innerText = activeInterviewProject.name;
+        const container = document.getElementById('interview-container');
+        container.innerHTML = '';
+
+        activeInterviewProject.questions.forEach((q, qIdx) => {
+            let html = `<div class="card"><span class="q-text">${qIdx+1}. ${q.text}</span>`;
+            
+            if(q.type === 'text') {
+                html += `<textarea class="ans-input" data-idx="${qIdx}" placeholder="Note answer..."></textarea>`;
+            } else {
+                q.options.forEach(opt => {
+                    const inputType = q.type === 'radio' ? 'radio' : 'checkbox';
+                    html += `
+                        <label class="choice-row">
+                            <input type="${inputType}" name="q${qIdx}" value="${opt}" class="ans-input" data-idx="${qIdx}">
+                            ${opt}
+                        </label>`;
+                });
+            }
+            html += `</div>`;
+            container.innerHTML += html;
+        });
+        showView('view-interview');
     }
 
-    function clearQuestions() {
-        if(confirm("Clear all questions?")) {
-            questions = [];
-            localStorage.removeItem('testQuestions');
-            sessionAnswers = {};
-            currentIndex = 0;
-            updateDisplay();
-        }
+    // --- AUDIO & FINAL SAVE ---
+    async function startAudio() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.start();
+        document.getElementById('recordStatus').innerText = "● RECORDING";
+        document.getElementById('recordStatus').classList.add('blink');
+        document.getElementById('startRec').disabled = true;
+        document.getElementById('stopRec').disabled = false;
     }
 
-    function nextQ() {
-        saveCurrentNote();
-        if (currentIndex < questions.length - 1) {
-            currentIndex++;
-            updateDisplay();
-        }
-    }
-
-    function prevQ() {
-        saveCurrentNote();
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateDisplay();
-        }
-    }
-
-    function saveCurrentNote() {
-        const note = document.getElementById('notes').value;
-        if (note.trim() !== "") {
-            sessionAnswers[currentIndex] = note;
-        }
-    }
-
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            chunks = [];
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                document.getElementById('recordStatus').innerText = "Recording Cached";
-                document.getElementById('recordStatus').classList.remove('recording');
-            };
-            mediaRecorder.start();
-            document.getElementById('recordStatus').innerText = "● RECORDING...";
-            document.getElementById('recordStatus').classList.add('recording');
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = false;
-        } catch (err) { alert("Mic error. Ensure you are using HTTPS."); }
-    }
-
-    function stopRecording() {
+    function stopAudio() {
         mediaRecorder.stop();
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
+        document.getElementById('recordStatus').innerText = "Recording Stopped";
+        document.getElementById('recordStatus').classList.remove('blink');
+        document.getElementById('startRec').disabled = false;
+        document.getElementById('stopRec').disabled = true;
     }
 
-    function finalSave() {
-        saveCurrentNote(); // Catch the last one
+    function finishInterview() {
+        let report = `CORRIDOR TEST: ${activeInterviewProject.name}\nDate: ${new Date().toLocaleString()}\n\n`;
         
-        let fullReport = "--- CORRIDOR TEST SESSION REPORT ---\n";
-        fullReport += "Date: " + new Date().toLocaleString() + "\n\n";
-
-        questions.forEach((q, index) => {
-            const ans = sessionAnswers[index] || "[No answer recorded]";
-            fullReport += `QUESTION ${index + 1}: ${q}\n`;
-            fullReport += `ANSWER: ${ans}\n`;
-            fullReport += `------------------------------------\n\n`;
+        // Loop through questions to collect answers
+        activeInterviewProject.questions.forEach((q, idx) => {
+            report += `Q${idx+1}: ${q.text}\n`;
+            if(q.type === 'text') {
+                const val = document.querySelector(`textarea[data-idx="${idx}"]`).value;
+                report += `A: ${val || "[No Answer]"}\n`;
+            } else {
+                const selected = Array.from(document.querySelectorAll(`input[data-idx="${idx}"]:checked`)).map(i => i.value);
+                report += `A: ${selected.join(', ') || "[No Selection]"}\n`;
+            }
+            report += `-------------------\n`;
         });
 
-        const ts = new Date().toISOString().replace(/[:.]/g, '-');
-        
-        // Download Report
-        const textBlob = new Blob([fullReport], { type: 'text/plain' });
-        download(textBlob, `Session_Report_${ts}.txt`);
+        // Download Text
+        const blobText = new Blob([report], { type: 'text/plain' });
+        download(blobText, `Result_${activeInterviewProject.name}.txt`);
 
         // Download Audio
-        if (chunks.length > 0) {
-            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-            download(audioBlob, `Session_Audio_${ts}.webm`);
+        if (audioChunks.length > 0) {
+            const blobAudio = new Blob(audioChunks, { type: 'audio/webm' });
+            download(blobAudio, `Audio_${activeInterviewProject.name}.webm`);
         }
     }
 
@@ -170,11 +265,8 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = name; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 100);
     }
-
-    updateDisplay();
 </script>
-
 </body>
 </html>
+
