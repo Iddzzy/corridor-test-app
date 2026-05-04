@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corridor Test Ultimate</title>
+    <title>Corridor Test Expert</title>
     <style>
-        :root { --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; --dark: #2c3e50; --light: #ecf0f1; }
-        body { font-family: sans-serif; margin: 0; background: var(--light); color: var(--dark); padding-bottom: 30px; }
-        .view { display: none; padding: 15px; max-width: 600px; margin: auto; }
+        :root { --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; --dark: #2c3e50; --light: #f4f7f6; }
+        body { font-family: sans-serif; margin: 0; background: var(--light); color: var(--dark); }
+        .view { display: none; padding: 20px; max-width: 600px; margin: auto; }
         .active { display: block; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
         h1, h2, h3 { text-align: center; }
@@ -19,11 +19,9 @@
         .btn-back { background: #95a5a6; }
         input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; gap: 5px; }
-        .log-item { font-size: 0.85rem; padding: 8px; border-bottom: 1px solid #ddd; }
         .blink { animation: blinker 1s linear infinite; color: var(--danger); }
         @keyframes blinker { 50% { opacity: 0; } }
-        .btn-group { display: flex; gap: 5px; }
-        .btn-small { padding: 8px; font-size: 0.8rem; width: auto; }
+        .small-text { font-size: 0.85rem; color: #666; }
     </style>
 </head>
 <body>
@@ -31,24 +29,25 @@
 <div id="view-main" class="view active">
     <h1>Welcome To Corridor Test</h1>
     <button class="btn-main" onclick="showView('view-projects-start')">Start Corridor Test</button>
-    <button class="btn-alt" onclick="showView('view-settings')">Settings</button>
-    <button class="btn-success" onclick="showView('view-reports')">Records</button>
-    <button style="background: #607d8b;" onclick="showView('view-logs')">Action Logs</button>
+    <button class="btn-alt" onclick="showView('view-settings')">List Of Project</button>
+    <button class="btn-success" onclick="showView('view-reports')">Record</button>
+    <button style="background: #607d8b;" onclick="showView('view-logs')">Log</button>
+    <button style="background: #795548;" onclick="showView('view-summary')">Summary</button>
 </div>
 
 <div id="view-settings" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
-    <h2>Projects</h2>
+    <h2>List Of Project</h2>
     <div id="project-list"></div>
     <button class="btn-success" onclick="prepareNewProject()">+ Add New Project</button>
 </div>
 
 <div id="view-editor" class="view">
     <button class="btn-back" onclick="showView('view-settings')">← Cancel</button>
-    <h2 id="editor-head">New Project</h2>
+    <h2 id="editor-head">Project Editor</h2>
     <input type="text" id="proj-name" placeholder="Project Name">
     <div class="card">
-        <h4>Add Question</h4>
+        <h4 id="q-editor-mode">Add Question</h4>
         <input type="text" id="q-text" placeholder="Question Text">
         <select id="q-type" onchange="toggleOptionsUI()">
             <option value="text">Plain Text</option>
@@ -57,58 +56,64 @@
         </select>
         <div id="options-setup" style="display:none;">
             <div id="options-list"></div>
-            <button class="btn-alt btn-small" onclick="addOptionInput()">+ Add Option</button>
+            <button class="btn-alt" style="width:auto; padding:5px 10px;" onclick="addOptionInput()">+ Add Option</button>
         </div>
-        <button class="btn-main" onclick="addQuestionToProject()">Add Question</button>
+        <button id="add-q-btn" class="btn-main" onclick="addOrUpdateQuestion()">Add Question to Project</button>
     </div>
     <div id="questions-preview"></div>
-    <button class="btn-success" onclick="saveProject()">Save Project Changes</button>
-</div>
-
-<div id="view-project-detail" class="view">
-    <button class="btn-back" onclick="showView('view-settings')">← Back</button>
-    <h2 id="view-p-title"></h2>
-    <div id="view-p-content"></div>
-    <button class="btn-main" id="edit-proj-btn">Edit Project Structure</button>
+    <button class="btn-success" onclick="saveProject()">Finalize & Save Project</button>
 </div>
 
 <div id="view-projects-start" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
-    <h2>Select Project</h2>
+    <h2>Start Corridor Test</h2>
     <div id="start-project-list"></div>
 </div>
 
 <div id="view-interview" class="view">
     <h3 id="active-p-name"></h3>
-    <div id="recordStatus">Ready</div>
+    <div id="recordStatus" style="text-align:center; font-weight:bold;">Ready</div>
     <div id="interview-questions"></div>
     <div style="display:flex; gap:10px;">
-        <button id="btnRecStart" class="btn-danger" onclick="startAudio()">⏺ Record</button>
+        <button id="btnRecStart" class="btn-danger" onclick="startAudio()">⏺ Start Now</button>
         <button id="btnRecStop" class="btn-alt" onclick="stopAudio()" disabled>⏹ Stop</button>
     </div>
-    <button class="btn-success" onclick="finishInterview()">💾 Save & Download</button>
+    <button class="btn-success" onclick="finishInterview()">💾 Save & Download Session</button>
+</div>
+
+<div id="view-thanks" class="view">
+    <div class="card" style="text-align:center; padding:50px 20px;">
+        <h2 style="color:var(--success);">✔ Thank You!</h2>
+        <p>The interview session has been saved and downloaded to your device.</p>
+        <button class="btn-main" onclick="showView('view-main')">Back to Home</button>
+    </div>
 </div>
 
 <div id="view-reports" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
-    <h2>Saved Records</h2>
+    <h2>Record</h2>
     <div id="reports-list"></div>
 </div>
 
 <div id="view-logs" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
-    <h2>Action Logs</h2>
+    <h2>Log</h2>
     <div id="logs-list" class="card"></div>
-    <button class="btn-danger btn-small" onclick="clearLogs()">Clear Logs</button>
+</div>
+
+<div id="view-summary" class="view">
+    <button class="btn-back" onclick="showView('view-main')">← Back</button>
+    <h2>Summary</h2>
+    <div id="summary-content" class="card"></div>
 </div>
 
 <script>
     let projects = JSON.parse(localStorage.getItem('ct_projects')) || [];
     let reports = JSON.parse(localStorage.getItem('ct_reports')) || [];
     let logs = JSON.parse(localStorage.getItem('ct_logs')) || [];
-    let currentEditIdx = -1;
+    let currentEditProjIdx = -1;
+    let currentEditQuesIdx = -1;
     let tempProject = { name: '', questions: [] };
-    let activeProject = null;
     let mediaRecorder;
     let audioChunks = [];
 
@@ -119,19 +124,30 @@
         if(id === 'view-reports') renderReports();
         if(id === 'view-projects-start') renderStartList();
         if(id === 'view-logs') renderLogs();
+        if(id === 'view-summary') renderSummary();
     }
 
     function addLog(msg) {
-        const entry = `[${new Date().toLocaleString()}] ${msg}`;
-        logs.unshift(entry);
+        logs.unshift(`[${new Date().toLocaleString()}] ${msg}`);
         localStorage.setItem('ct_logs', JSON.stringify(logs));
     }
 
-    // PROJECT EDITOR
+    // --- SUMMARY ---
+    function renderSummary() {
+        const content = document.getElementById('summary-content');
+        content.innerHTML = `
+            <p><b>Total Projects:</b> ${projects.length}</p>
+            <p><b>Total Records Saved:</b> ${reports.length}</p>
+            <p><b>Total Logged Actions:</b> ${logs.length}</p>
+            <hr>
+            <p class="small-text">Last Action: ${logs[0] || 'None'}</p>
+        `;
+    }
+
+    // --- EDITOR LOGIC ---
     function prepareNewProject() {
-        currentEditIdx = -1;
+        currentEditProjIdx = -1;
         tempProject = { name: '', questions: [], date: new Date().toLocaleDateString() };
-        document.getElementById('editor-head').innerText = "New Project";
         document.getElementById('proj-name').value = '';
         renderEditorPreview();
         showView('view-editor');
@@ -140,44 +156,68 @@
     function toggleOptionsUI() {
         const type = document.getElementById('q-type').value;
         document.getElementById('options-setup').style.display = (type !== 'text') ? 'block' : 'none';
-        if(type !== 'text') {
-            document.getElementById('options-list').innerHTML = '';
-            addOptionInput(); addOptionInput();
-        }
     }
 
-    function addOptionInput() {
+    function addOptionInput(val = '') {
         const div = document.createElement('div');
-        div.innerHTML = `<input type="text" class="opt-val" placeholder="Option">`;
+        div.innerHTML = `<input type="text" class="opt-val" value="${val}" placeholder="Option">`;
         document.getElementById('options-list').appendChild(div);
     }
 
-    function addQuestionToProject() {
+    function addOrUpdateQuestion() {
         const text = document.getElementById('q-text').value;
         const type = document.getElementById('q-type').value;
         if(!text) return alert("Enter question text");
+        
         let options = [];
         if(type !== 'text') {
             document.querySelectorAll('.opt-val').forEach(i => { if(i.value) options.push(i.value) });
         }
-        tempProject.questions.push({ text, type, options });
+
+        const qData = { text, type, options };
+
+        if(currentEditQuesIdx > -1) {
+            tempProject.questions[currentEditQuesIdx] = qData;
+            currentEditQuesIdx = -1;
+            document.getElementById('add-q-btn').innerText = "Add Question to Project";
+            document.getElementById('q-editor-mode').innerText = "Add Question";
+        } else {
+            tempProject.questions.push(qData);
+        }
+
         renderEditorPreview();
         document.getElementById('q-text').value = '';
+        document.getElementById('options-list').innerHTML = '';
     }
 
     function renderEditorPreview() {
         const cont = document.getElementById('questions-preview');
-        cont.innerHTML = '<h4>Questions in Project:</h4>';
+        cont.innerHTML = '<h4>Questions:</h4>';
         tempProject.questions.forEach((q, i) => {
             cont.innerHTML += `<div class="card item-row">
                 <span>${i+1}. ${q.text}</span>
-                <button onclick="removeQuestion(${i})" class="btn-danger btn-small">Delete</button>
+                <div>
+                    <button onclick="editQuestionInline(${i})" class="btn-main" style="width:auto; padding:5px;">Edit</button>
+                    <button onclick="removeQuestion(${i})" class="btn-danger" style="width:auto; padding:5px;">Delete</button>
+                </div>
             </div>`;
         });
     }
 
+    function editQuestionInline(i) {
+        currentEditQuesIdx = i;
+        const q = tempProject.questions[i];
+        document.getElementById('q-text').value = q.text;
+        document.getElementById('q-type').value = q.type;
+        toggleOptionsUI();
+        document.getElementById('options-list').innerHTML = '';
+        if(q.options) q.options.forEach(opt => addOptionInput(opt));
+        document.getElementById('add-q-btn').innerText = "Update Question";
+        document.getElementById('q-editor-mode').innerText = "Editing Question " + (i+1);
+    }
+
     function removeQuestion(i) {
-        if(confirm("Are you sure you want to delete this question?\n\nYes - Proceed\nCancel - Go back")) {
+        if(confirm("Are you sure you want to delete this question?")) {
             tempProject.questions.splice(i,1);
             renderEditorPreview();
         }
@@ -185,9 +225,9 @@
 
     function saveProject() {
         tempProject.name = document.getElementById('proj-name').value || "Unnamed";
-        if(currentEditIdx > -1) {
-            projects[currentEditIdx] = tempProject;
-            addLog(`Edited project: ${tempProject.name}`);
+        if(currentEditProjIdx > -1) {
+            projects[currentEditProjIdx] = tempProject;
+            addLog(`Updated project: ${tempProject.name}`);
         } else {
             projects.push(tempProject);
             addLog(`Created project: ${tempProject.name}`);
@@ -196,59 +236,40 @@
         showView('view-settings');
     }
 
-    // SETTINGS / VIEW / DUPLICATE
+    // --- LIST OF PROJECT ---
     function renderProjectList() {
         const list = document.getElementById('project-list');
         list.innerHTML = projects.map((p, i) => `
             <div class="card">
                 <b>${p.name}</b><br><small>Created: ${p.date}</small>
-                <div class="btn-group">
-                    <button class="btn-main btn-small" onclick="viewProjectDetail(${i})">View</button>
-                    <button class="btn-alt btn-small" onclick="duplicateProject(${i})">Duplicate</button>
-                    <button class="btn-danger btn-small" onclick="deleteProject(${i})">Delete</button>
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <button class="btn-main" onclick="editProject(${i})">View/Edit</button>
+                    <button class="btn-alt" onclick="duplicateProject(${i})">Duplicate</button>
+                    <button class="btn-danger" onclick="deleteProject(${i})">Delete</button>
                 </div>
             </div>
-        `).join('');
+        `).join('') || "No projects found.";
     }
 
-    function viewProjectDetail(i) {
-        const p = projects[i];
-        document.getElementById('view-p-title').innerText = p.name;
-        document.getElementById('view-p-content').innerHTML = p.questions.map((q, idx) => `
-            <div class="card"><b>${idx+1}. ${q.text}</b><br><small>Type: ${q.type}</small></div>
-        `).join('');
-        document.getElementById('edit-proj-btn').onclick = () => {
-            currentEditIdx = i;
-            tempProject = JSON.parse(JSON.stringify(p)); // Deep copy
-            document.getElementById('proj-name').value = tempProject.name;
-            document.getElementById('editor-head').innerText = "Edit Project";
-            renderEditorPreview();
-            showView('view-editor');
-        };
-        showView('view-project-detail');
+    function editProject(i) {
+        currentEditProjIdx = i;
+        tempProject = JSON.parse(JSON.stringify(projects[i]));
+        document.getElementById('proj-name').value = tempProject.name;
+        renderEditorPreview();
+        showView('view-editor');
     }
 
     function duplicateProject(i) {
-        let original = projects[i];
-        let copy = JSON.parse(JSON.stringify(original));
-        
-        // Find correct number for name
-        let count = 1;
-        let newName = `${original.name} (${count})`;
-        while(projects.some(p => p.name === newName)) {
-            count++;
-            newName = `${original.name} (${count})`;
-        }
-        
-        copy.name = newName;
+        let copy = JSON.parse(JSON.stringify(projects[i]));
+        copy.name += " (1)";
         projects.push(copy);
         localStorage.setItem('ct_projects', JSON.stringify(projects));
-        addLog(`Duplicated project: ${original.name} -> ${newName}`);
+        addLog(`Duplicated project: ${projects[i].name}`);
         renderProjectList();
     }
 
     function deleteProject(i) {
-        if(confirm("Are you sure you want to delete this project?\n\nYes - Proceed\nCancel - Go back")) {
+        if(confirm("Are you sure to delete?")) {
             addLog(`Deleted project: ${projects[i].name}`);
             projects.splice(i,1);
             localStorage.setItem('ct_projects', JSON.stringify(projects));
@@ -256,13 +277,7 @@
         }
     }
 
-    // LOGS
-    function renderLogs() {
-        document.getElementById('logs-list').innerHTML = logs.map(l => `<div class="log-item">${l}</div>`).join('') || "No logs yet.";
-    }
-    function clearLogs() { if(confirm("Clear all action logs?")) { logs = []; localStorage.removeItem('ct_logs'); renderLogs(); } }
-
-    // INTERVIEW (REMAINS SIMILAR BUT ADDS LOGGING)
+    // --- INTERVIEW ---
     function renderStartList() {
         document.getElementById('start-project-list').innerHTML = projects.map((p, i) => `
             <button class="btn-main" onclick="runInterview(${i})">${p.name}</button>
@@ -270,17 +285,12 @@
     }
 
     function runInterview(idx) {
-        activeProject = projects[idx];
-        document.getElementById('active-p-name').innerText = activeProject.name;
-        const cont = document.getElementById('interview-questions');
-        cont.innerHTML = activeProject.questions.map((q, i) => {
+        const active = projects[idx];
+        document.getElementById('active-p-name').innerText = active.name;
+        document.getElementById('interview-questions').innerHTML = active.questions.map((q, i) => {
             let input = `<textarea class="ans-in" data-idx="${i}"></textarea>`;
             if(q.type !== 'text') {
-                input = q.options.map(opt => `
-                    <label class="item-row card" style="justify-content:flex-start;">
-                        <input type="${q.type}" name="q${i}" value="${opt}" class="ans-in" data-idx="${i}"> ${opt}
-                    </label>
-                `).join('');
+                input = q.options.map(opt => `<label class="card item-row" style="justify-content:flex-start;"><input type="${q.type}" name="q${i}" value="${opt}" class="ans-in" data-idx="${i}"> ${opt}</label>`).join('');
             }
             return `<div class="card"><b>${i+1}. ${q.text}</b><br>${input}</div>`;
         }).join('');
@@ -301,64 +311,52 @@
 
     function stopAudio() {
         mediaRecorder.stop();
-        document.getElementById('recordStatus').innerText = "Audio Saved";
+        document.getElementById('recordStatus').innerText = "Audio Stopped";
         document.getElementById('recordStatus').classList.remove('blink');
         document.getElementById('btnRecStart').disabled = false;
         document.getElementById('btnRecStop').disabled = true;
     }
 
     function finishInterview() {
-        let txt = `PROJECT: ${activeProject.name}\nDATE: ${new Date().toLocaleString()}\n\n`;
-        activeProject.questions.forEach((q, i) => {
-            txt += `Q${i+1}: ${q.text}\n`;
-            if(q.type === 'text') {
-                txt += `A: ${document.querySelector(`textarea[data-idx="${i}"]`).value}\n`;
-            } else {
-                const sel = Array.from(document.querySelectorAll(`input[data-idx="${i}"]:checked`)).map(el => el.value);
-                txt += `A: ${sel.join(', ') || 'No answer'}\n`;
-            }
-            txt += `-------------------\n`;
+        const activeName = document.getElementById('active-p-name').innerText;
+        let txt = `REPORT: ${activeName}\nDATE: ${new Date().toLocaleString()}\n\n`;
+        document.querySelectorAll('.ans-in').forEach((el) => {
+            if (el.tagName === 'TEXTAREA') txt += `Q: ${el.parentElement.innerText}\nA: ${el.value}\n---\n`;
+            else if (el.checked) txt += `Q: ${el.name}\nA: ${el.value}\n---\n`;
         });
 
-        reports.push({ name: activeProject.name, date: new Date().toLocaleString(), content: txt });
+        reports.push({ name: activeName, date: new Date().toLocaleString(), content: txt });
         localStorage.setItem('ct_reports', JSON.stringify(reports));
-        addLog(`Completed interview for: ${activeProject.name}`);
+        addLog(`Interview Record Saved: ${activeName}`);
 
-        const blob = new Blob([txt], { type: 'text/plain' });
-        downloadFile(blob, `Record_${activeProject.name}.txt`);
-        showView('view-main');
+        // Download Files
+        downloadFile(new Blob([txt], {type:'text/plain'}), `Record_${activeName}.txt`);
+        if(audioChunks.length > 0) downloadFile(new Blob(audioChunks, {type:'audio/webm'}), `Audio_${activeName}.webm`);
+
+        showView('view-thanks');
     }
 
+    // --- OTHER ---
     function renderReports() {
         document.getElementById('reports-list').innerHTML = reports.map((r, i) => `
             <div class="card item-row">
                 <div><b>${r.name}</b><br><small>${r.date}</small></div>
-                <div class="btn-group">
-                    <button onclick="downloadReport(${i})" class="btn-success btn-small">Download</button>
-                    <button onclick="deleteRecord(${i})" class="btn-danger btn-small">X</button>
-                </div>
+                <button onclick="downloadReport(${i})" class="btn-success" style="width:auto;">Re-Download</button>
             </div>
         `).join('') || "No records.";
     }
 
     function downloadReport(i) {
-        const r = reports[i];
-        downloadFile(new Blob([r.content], {type:'text/plain'}), `Re-Download_${r.name}.txt`);
+        downloadFile(new Blob([reports[i].content], {type:'text/plain'}), `Record_${reports[i].name}.txt`);
     }
 
-    function deleteRecord(i) {
-        if(confirm("Are you sure you want to delete this record?\n\nYes - Proceed\nCancel - Go back")) {
-            addLog(`Deleted record: ${reports[i].name}`);
-            reports.splice(i,1);
-            localStorage.setItem('ct_reports', JSON.stringify(reports));
-            renderReports();
-        }
+    function renderLogs() {
+        document.getElementById('logs-list').innerHTML = logs.map(l => `<div style="font-size:0.8rem; border-bottom:1px solid #eee; padding:5px;">${l}</div>`).join('') || "Empty.";
     }
 
     function downloadFile(blob, name) {
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = name; a.click();
+        const a = document.createElement('a'); a.href = url; a.download = name; a.click();
     }
 </script>
 </body>
