@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corridor Test Expert Pro</title>
+    <title>Corridor Test Pro</title>
     <style>
         :root { 
             --primary: #2563eb; 
@@ -11,83 +11,69 @@
             --success: #10b981; 
             --dark: #1e293b; 
             --light-bg: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            margin: 0; 
-            background: var(--light-bg); 
-            background-attachment: fixed;
-            color: var(--dark); 
-            min-height: 100vh;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif; 
+            margin: 0; background: var(--light-bg); background-attachment: fixed;
+            color: var(--dark); min-height: 100vh;
         }
 
-        .view { display: none; padding: 24px; max-width: 500px; margin: auto; animation: fadeIn 0.3s ease-in-out; }
+        .view { display: none; padding: 20px; max-width: 500px; margin: auto; animation: fadeIn 0.3s ease; }
         .active { display: block; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        h1 { font-size: 1.8rem; font-weight: 800; color: var(--dark); text-align: center; margin-bottom: 30px; letter-spacing: -0.025em; }
-        h2 { font-size: 1.4rem; font-weight: 700; color: var(--dark); margin-bottom: 20px; }
+        h1 { font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 25px; letter-spacing: -0.5px; }
+        h2 { font-size: 1.3rem; margin-bottom: 20px; border-left: 4px solid var(--primary); padding-left: 10px; }
 
-        /* Card Styling */
         .card { 
-            background: rgba(255, 255, 255, 0.9); 
-            backdrop-filter: blur(10px);
-            padding: 20px; 
-            border-radius: 16px; 
-            box-shadow: var(--card-shadow); 
-            margin-bottom: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); 
+            margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.6);
         }
 
-        /* Interactive Elements */
         button { 
             padding: 16px; font-weight: 600; border: none; border-radius: 12px; 
             color: white; cursor: pointer; margin: 8px 0; width: 100%; font-size: 1rem; 
-            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center;
         }
-        button:active { transform: scale(0.98); opacity: 0.9; }
-        
+        button:active { transform: scale(0.97); }
         .btn-main { background: var(--primary); }
         .btn-alt { background: var(--dark); }
         .btn-danger { background: var(--danger); }
         .btn-success { background: var(--success); }
-        .btn-back { background: transparent; color: var(--dark); border: 1px solid #cbd5e1; margin-bottom: 20px; }
+        .btn-back { background: transparent; color: var(--dark); border: 1px solid #cbd5e1; margin-bottom: 15px; }
 
         input, textarea, select { 
-            width: 100%; padding: 14px; margin: 10px 0; 
-            border: 1px solid #e2e8f0; border-radius: 12px; 
-            box-sizing: border-box; font-size: 16px; background: white;
-            transition: border-color 0.2s;
-        }
-        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-
-        /* Timer Display */
-        #timer-display { 
-            background: var(--dark); color: white; padding: 8px 16px; border-radius: 30px;
-            font-family: 'Monaco', monospace; font-size: 1.2rem; margin: 10px auto; width: fit-content;
+            width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #e2e8f0; 
+            border-radius: 12px; font-size: 16px; background: white;
         }
 
         /* Sticky Footer */
         .sticky-controls {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px);
-            box-shadow: 0 -10px 25px rgba(0,0,0,0.05); padding: 15px 25px 30px;
-            box-sizing: border-box; z-index: 1000; border-top: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); padding: 15px 20px 30px;
+            box-sizing: border-box; z-index: 1000; border-top: 1px solid #eee;
         }
         .footer-spacer { height: 180px; }
 
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .blink { color: var(--danger); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        #timer-display { 
+            background: var(--dark); color: white; padding: 10px 20px; 
+            border-radius: 30px; font-family: monospace; font-size: 1.4rem; 
+            margin: 10px auto; width: fit-content;
+        }
+
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .blink { color: var(--danger); animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.2; } }
     </style>
 </head>
 <body>
 
 <div id="view-main" class="view active">
-    <h1>Corridor Test<br><span style="color:var(--primary); font-size: 0.9rem; font-weight: 500;">DESIGN RESEARCH SUITE</span></h1>
+    <h1>Corridor Test<br><span style="color:var(--primary); font-size: 0.8rem; font-weight:600;">PROFESSIONAL RESEARCH TOOL</span></h1>
     <div class="card">
         <button class="btn-main" onclick="showView('view-projects-start')">Start Corridor Test</button>
         <button class="btn-alt" onclick="showView('view-settings')">List Of Project</button>
@@ -99,11 +85,45 @@
     </div>
 </div>
 
+<div id="view-settings" class="view">
+    <button class="btn-back" onclick="showView('view-main')">← Back to Home</button>
+    <h2>List Of Project</h2>
+    <div id="project-list"></div>
+    <button class="btn-success" onclick="prepareNewProject()">+ Add New Project</button>
+</div>
+
+<div id="view-editor" class="view">
+    <button class="btn-back" onclick="showView('view-settings')">← Cancel</button>
+    <h2 id="editor-head">Project Editor</h2>
+    <input type="text" id="proj-name" placeholder="Project Name">
+    <div class="card">
+        <h4 id="q-editor-mode" style="margin-top:0;">Add Question</h4>
+        <input type="text" id="q-text" placeholder="Question Text">
+        <select id="q-type" onchange="toggleOptionsUI()">
+            <option value="text">Plain Text</option>
+            <option value="radio">Radio Button</option>
+            <option value="checkbox">Checkbox</option>
+        </select>
+        <div id="options-setup" style="display:none;">
+            <div id="options-list"></div>
+            <button class="btn-alt" style="padding:8px; font-size:0.8rem; width:auto;" onclick="addOptionInput()">+ Add Option</button>
+        </div>
+        <button id="add-q-btn" class="btn-main" onclick="addOrUpdateQuestion()">Add Question to Project</button>
+    </div>
+    <div id="questions-preview"></div>
+    <button class="btn-success" onclick="saveProject()">Finalize & Save Project</button>
+</div>
+
+<div id="view-projects-start" class="view">
+    <button class="btn-back" onclick="showView('view-main')">← Back</button>
+    <h2>Choose Project</h2>
+    <div id="start-project-list"></div>
+</div>
+
 <div id="view-interview" class="view" style="padding-bottom: 0;">
-    <button class="btn-back" onclick="showView('view-main')">← Abort Session</button>
-    <h3 id="active-p-name" style="margin-bottom: 5px;"></h3>
+    <h3 id="active-p-name"></h3>
     <div id="timer-display">00:00:00</div>
-    <div id="recordStatus" style="text-align:center; font-size: 0.8rem; margin-bottom: 20px;">Ready to start</div>
+    <div id="recordStatus" style="text-align:center; font-weight:bold; font-size:0.8rem; margin-bottom:10px;">Ready</div>
     
     <div id="interview-questions"></div>
     <div class="footer-spacer"></div>
@@ -117,20 +137,28 @@
     </div>
 </div>
 
+<div id="view-thanks" class="view">
+    <div class="card" style="text-align:center; padding:60px 20px;">
+        <h1 style="color:var(--success); font-size:3rem; margin:0;">✔</h1>
+        <h2>Thank You!</h2>
+        <p>The session records and audio have been successfully generated.</p>
+        <button class="btn-main" onclick="showView('view-main')">Return Home</button>
+    </div>
+</div>
+
+<div id="view-reports" class="view"> <button class="btn-back" onclick="showView('view-main')">← Back</button> <h2>Record</h2> <div id="reports-list"></div> </div>
+<div id="view-logs" class="view"> <button class="btn-back" onclick="showView('view-main')">← Back</button> <h2>Log</h2> <div id="logs-list" class="card" style="font-size:0.8rem;"></div> </div>
+<div id="view-summary" class="view"> <button class="btn-back" onclick="showView('view-main')">← Back</button> <h2>Summary</h2> <div id="summary-content" class="card"></div> </div>
+
 <script>
-    /* ... [REMAINING JAVASCRIPT LOGIC FROM PREVIOUS VERSION] ... */
     let projects = JSON.parse(localStorage.getItem('ct_projects')) || [];
     let reports = JSON.parse(localStorage.getItem('ct_reports')) || [];
     let logs = JSON.parse(localStorage.getItem('ct_logs')) || [];
     let currentEditProjIdx = -1;
     let currentEditQuesIdx = -1;
     let tempProject = { name: '', questions: [] };
-    let startTime;
-    let timerInterval;
-    let elapsedSeconds = 0;
-    let mediaRecorder;
-    let audioChunks = [];
-    let activeProjectQuestions = [];
+    let startTime, timerInterval, elapsedSeconds = 0;
+    let mediaRecorder, audioChunks = [], activeProjectQuestions = [];
 
     function showView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -141,13 +169,15 @@
         if(id === 'view-logs') renderLogs();
         if(id === 'view-summary') renderSummary();
         if(id !== 'view-interview') resetTimer();
+        window.scrollTo(0,0);
     }
 
-    // Logic implementation continues exactly as before...
-    // (Ensure you keep all the helper functions for adding questions, duplication, timer, etc.)
-    
-    /* ADD LOGIC FUNCTIONS HERE (Duplicate, Save, Timer, etc.) */
+    function addLog(msg) {
+        logs.unshift(`[${new Date().toLocaleString()}] ${msg}`);
+        localStorage.setItem('ct_logs', JSON.stringify(logs.slice(0, 50)));
+    }
 
+    // --- TIMER & AUDIO ---
     function formatTime(s) { return new Date(s * 1000).toISOString().substr(11, 8); }
     function startTimer() { startTime = Date.now() - (elapsedSeconds * 1000); timerInterval = setInterval(() => { elapsedSeconds = Math.floor((Date.now() - startTime) / 1000); document.getElementById('timer-display').innerText = formatTime(elapsedSeconds); }, 1000); }
     function stopTimer() { clearInterval(timerInterval); }
@@ -165,19 +195,123 @@
             document.getElementById('recordStatus').classList.add('blink');
             document.getElementById('btnRecStart').disabled = true;
             document.getElementById('btnRecStop').disabled = false;
-        } catch (err) { alert("Mic access denied."); }
+        } catch (err) { alert("Mic access denied. Use HTTPS."); }
     }
 
     function stopAudio() {
         if(mediaRecorder) mediaRecorder.stop();
         stopTimer();
-        document.getElementById('recordStatus').innerText = "Recording Paused";
+        document.getElementById('recordStatus').innerText = "Recording Stopped";
         document.getElementById('recordStatus').classList.remove('blink');
         document.getElementById('btnRecStart').disabled = false;
         document.getElementById('btnRecStop').disabled = true;
     }
+
+    // --- PROJECT EDITOR ---
+    function prepareNewProject() { currentEditProjIdx = -1; tempProject = { name: '', questions: [], date: new Date().toLocaleDateString() }; document.getElementById('proj-name').value = ''; renderEditorPreview(); showView('view-editor'); }
+    function toggleOptionsUI() { document.getElementById('options-setup').style.display = (document.getElementById('q-type').value !== 'text') ? 'block' : 'none'; }
+    function addOptionInput(val = '') { const div = document.createElement('div'); div.innerHTML = `<input type="text" class="opt-val" value="${val}" placeholder="Option">`; document.getElementById('options-list').appendChild(div); }
     
-    // ... rest of the helper functions from previous versions to ensure full project management ...
+    function addOrUpdateQuestion() {
+        const text = document.getElementById('q-text').value;
+        const type = document.getElementById('q-type').value;
+        if(!text) return;
+        let options = [];
+        if(type !== 'text') document.querySelectorAll('.opt-val').forEach(i => { if(i.value) options.push(i.value) });
+        if(currentEditQuesIdx > -1) { tempProject.questions[currentEditQuesIdx] = {text, type, options}; currentEditQuesIdx = -1; document.getElementById('add-q-btn').innerText = "Add Question"; }
+        else tempProject.questions.push({text, type, options});
+        renderEditorPreview(); document.getElementById('q-text').value = ''; document.getElementById('options-list').innerHTML = '';
+    }
+
+    function renderEditorPreview() {
+        const cont = document.getElementById('questions-preview');
+        cont.innerHTML = '<h4>Draft Questions:</h4>';
+        tempProject.questions.forEach((q, i) => {
+            cont.innerHTML += `<div class="card item-row"><span>${i+1}. ${q.text}</span><div><button onclick="editQuestionInline(${i})" class="btn-main" style="width:auto; padding:5px 10px;">Edit</button><button onclick="removeQuestion(${i})" class="btn-danger" style="width:auto; padding:5px 10px; margin-left:5px;">X</button></div></div>`;
+        });
+    }
+
+    function editQuestionInline(i) {
+        currentEditQuesIdx = i; const q = tempProject.questions[i];
+        document.getElementById('q-text').value = q.text; document.getElementById('q-type').value = q.type;
+        toggleOptionsUI(); document.getElementById('options-list').innerHTML = '';
+        if(q.options) q.options.forEach(opt => addOptionInput(opt));
+        document.getElementById('add-q-btn').innerText = "Update Question";
+        window.scrollTo(0,0);
+    }
+
+    function removeQuestion(i) { if(confirm("Are you sure to delete?")) { tempProject.questions.splice(i,1); renderEditorPreview(); } }
+
+    function saveProject() {
+        tempProject.name = document.getElementById('proj-name').value || "Unnamed Project";
+        if(currentEditProjIdx > -1) projects[currentEditProjIdx] = tempProject;
+        else projects.push(tempProject);
+        localStorage.setItem('ct_projects', JSON.stringify(projects));
+        addLog(`Saved Project: ${tempProject.name}`);
+        showView('view-settings');
+    }
+
+    // --- LISTS & RECORDS ---
+    function renderProjectList() {
+        document.getElementById('project-list').innerHTML = projects.map((p, i) => `
+            <div class="card">
+                <b>${p.name}</b><br><small>Created: ${p.date}</small>
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <button class="btn-main" onclick="editProject(${i})">View/Edit</button>
+                    <button class="btn-alt" onclick="duplicateProject(${i})">Duplicate</button>
+                    <button class="btn-danger" onclick="deleteProject(${i})">Delete</button>
+                </div>
+            </div>`).join('') || "No projects found.";
+    }
+
+    function editProject(i) { currentEditProjIdx = i; tempProject = JSON.parse(JSON.stringify(projects[i])); document.getElementById('proj-name').value = tempProject.name; renderEditorPreview(); showView('view-editor'); }
+    
+    function duplicateProject(i) {
+        let copy = JSON.parse(JSON.stringify(projects[i]));
+        copy.name += ` (${projects.length})`;
+        projects.push(copy); localStorage.setItem('ct_projects', JSON.stringify(projects));
+        addLog(`Duplicated: ${projects[i].name}`); renderProjectList();
+    }
+
+    function deleteProject(i) { if(confirm("Are you sure to delete?")) { addLog(`Deleted Project: ${projects[i].name}`); projects.splice(i,1); localStorage.setItem('ct_projects', JSON.stringify(projects)); renderProjectList(); } }
+
+    function renderStartList() { document.getElementById('start-project-list').innerHTML = projects.map((p, i) => `<button class="btn-main" onclick="runInterview(${i})">${p.name}</button>`).join(''); }
+
+    function runInterview(idx) {
+        const active = projects[idx]; activeProjectQuestions = active.questions;
+        document.getElementById('active-p-name').innerText = active.name;
+        document.getElementById('interview-questions').innerHTML = active.questions.map((q, i) => {
+            let input = `<textarea class="ans-in" data-idx="${i}" placeholder="Enter notes..."></textarea>`;
+            if(q.type !== 'text') input = q.options.map(opt => `<label class="card item-row" style="justify-content:flex-start; background:white;"><input type="${q.type}" name="q${i}" value="${opt}" class="ans-in" data-idx="${i}"> ${opt}</label>`).join('');
+            return `<div class="card"><b>${i+1}. ${q.text}</b><br>${input}</div>`;
+        }).join('');
+        showView('view-interview');
+    }
+
+    function finishInterview() {
+        const activeName = document.getElementById('active-p-name').innerText;
+        const dur = document.getElementById('timer-display').innerText;
+        let txt = `SESSION REPORT: ${activeName}\nDATE: ${new Date().toLocaleString()}\nDURATION: ${dur}\n\n`;
+        activeProjectQuestions.forEach((q, i) => {
+            txt += `Q${i+1}: ${q.text}\n`;
+            if(q.type === 'text') txt += `A: ${document.querySelector(`textarea[data-idx="${i}"]`).value || "[No Input]"}\n`;
+            else {
+                const sel = Array.from(document.querySelectorAll(`input[data-idx="${i}"]:checked`)).map(e => e.value);
+                txt += `A: ${sel.join(', ') || "[No Selection]"}\n`;
+            }
+            txt += `-------------------\n`;
+        });
+        reports.push({ name: activeName, date: new Date().toLocaleString(), content: txt });
+        localStorage.setItem('ct_reports', JSON.stringify(reports));
+        downloadFile(new Blob([txt], {type:'text/plain'}), `Record_${activeName}.txt`);
+        if(audioChunks.length > 0) downloadFile(new Blob(audioChunks, {type:'audio/webm'}), `Audio_${activeName}.webm`);
+        addLog(`Completed Interview: ${activeName}`); showView('view-thanks');
+    }
+
+    function renderReports() { document.getElementById('reports-list').innerHTML = reports.map((r, i) => `<div class="card item-row"><div><b>${r.name}</b><br><small>${r.date}</small></div><button onclick="downloadFile(new Blob([reports[${i}].content],{type:'text/plain'}),'Record_'+reports[${i}].name+'.txt')" class="btn-success" style="width:auto;">Download</button></div>`).join('') || "No records."; }
+    function renderLogs() { document.getElementById('logs-list').innerHTML = logs.map(l => `<div style="padding:8px; border-bottom:1px solid #eee;">${l}</div>`).join('') || "Empty."; }
+    function renderSummary() { document.getElementById('summary-content').innerHTML = `<h3>Activity Overview</h3><p><b>Projects:</b> ${projects.length}</p><p><b>Interviews:</b> ${reports.length}</p><p><b>Log Count:</b> ${logs.length}</p>`; }
+    function downloadFile(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); }
 </script>
 </body>
 </html>
