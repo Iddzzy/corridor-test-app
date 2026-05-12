@@ -15,7 +15,7 @@
         }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-family: 'Inter', -apple-system, sans-serif; 
             margin: 0; background: var(--light-bg); background-attachment: fixed;
             color: var(--dark); min-height: 100vh;
         }
@@ -74,9 +74,9 @@
 </head>
 <body>
 
-<!-- 1. HOME VIEW -->
+<!-- HOME -->
 <div id="view-main" class="view active">
-    <h1 style="text-align:center;">Corridor Test Suite</h1>
+    <h1>Corridor Test Suite</h1>
     <div class="card">
         <button class="btn-main" onclick="showView('view-projects-start')">Start Corridor Test</button>
         <button class="btn-alt" onclick="showView('view-settings')">List Of Project</button>
@@ -88,15 +88,15 @@
     </div>
 </div>
 
-<!-- 2. PROJECT LIST VIEW -->
+<!-- LIST OF PROJECT -->
 <div id="view-settings" class="view">
-    <button class="btn-back" onclick="showView('view-main')">← Back to Home</button>
+    <button class="btn-back" onclick="showView('view-main')">← Home</button>
     <h2>List Of Project</h2>
     <div id="project-list"></div>
     <button class="btn-success" onclick="prepareNewProject()">+ Add New Project</button>
 </div>
 
-<!-- 3. PROJECT EDITOR VIEW -->
+<!-- PROJECT EDITOR -->
 <div id="view-editor" class="view">
     <button class="btn-back" onclick="showView('view-settings')">← Cancel</button>
     <h2 id="editor-head">Project Editor</h2>
@@ -119,14 +119,14 @@
     <button class="btn-success" onclick="saveProject()">Finalize & Save Project</button>
 </div>
 
-<!-- 4. INTERVIEW START LIST -->
+<!-- CHOOSE PROJECT TO START -->
 <div id="view-projects-start" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
     <h2>Choose Project</h2>
     <div id="start-project-list"></div>
 </div>
 
-<!-- 5. INTERVIEW INTERFACE -->
+<!-- INTERVIEW INTERFACE -->
 <div id="view-interview" class="view" style="padding-bottom: 0;">
     <h3 id="active-p-name" style="text-align:center;"></h3>
     <div id="timer-display">00:00:00</div>
@@ -144,39 +144,39 @@
     </div>
 </div>
 
-<!-- 6. THANK YOU PAGE -->
-<div id="view-thanks" class="view">
-    <div class="card" style="text-align:center; padding:60px 20px;">
-        <h1 style="color:var(--success); font-size:3rem; margin:0;">✔</h1>
-        <h2>Thank You!</h2>
-        <p>The session records and audio have been generated.</p>
-        <button class="btn-main" onclick="showView('view-main')">Return Home</button>
-    </div>
-</div>
-
-<!-- 7. RECORD VIEW -->
+<!-- RECORD VIEW -->
 <div id="view-reports" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
     <h2>Record</h2>
     <div id="reports-list"></div>
 </div>
 
-<!-- 8. LOG VIEW -->
+<!-- LOG VIEW -->
 <div id="view-logs" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
-    <h2>Action Log</h2>
+    <h2>Log</h2>
     <div id="logs-list"></div>
 </div>
 
-<!-- 9. SUMMARY VIEW -->
+<!-- SUMMARY VIEW -->
 <div id="view-summary" class="view">
     <button class="btn-back" onclick="showView('view-main')">← Back</button>
     <h2>Summary</h2>
     <div id="summary-content"></div>
 </div>
 
+<!-- THANK YOU VIEW -->
+<div id="view-thanks" class="view">
+    <div class="card" style="text-align:center; padding:60px 20px;">
+        <h1 style="color:var(--success); font-size:3rem; margin:0;">✔</h1>
+        <h2>Thank You!</h2>
+        <p>Your session record and audio have been downloaded.</p>
+        <button class="btn-main" onclick="showView('view-main')">Return Home</button>
+    </div>
+</div>
+
 <script>
-    // --- Data Management ---
+    // --- State Persistence ---
     let projects = JSON.parse(localStorage.getItem('ct_projects')) || [];
     let reports = JSON.parse(localStorage.getItem('ct_reports')) || [];
     let logs = JSON.parse(localStorage.getItem('ct_logs')) || [];
@@ -186,12 +186,12 @@
     let startTime, timerInterval, elapsedSeconds = 0;
     let mediaRecorder, audioChunks = [], activeProjectQuestions = [];
 
-    // --- Main View Switcher ---
+    // --- Core Navigation & Rendering ---
     function showView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         
-        // Refresh dynamic content based on view
+        // Logic Triggered on View Entry
         if(id === 'view-settings') renderProjectList();
         if(id === 'view-projects-start') renderStartList();
         if(id === 'view-reports') renderReports();
@@ -207,38 +207,93 @@
         localStorage.setItem('ct_logs', JSON.stringify(logs.slice(0, 50)));
     }
 
-    // --- Timer Logic ---
-    function formatTime(s) { return new Date(s * 1000).toISOString().substr(11, 8); }
-    function startTimer() { 
-        startTime = Date.now() - (elapsedSeconds * 1000); 
-        timerInterval = setInterval(() => { 
-            elapsedSeconds = Math.floor((Date.now() - startTime) / 1000); 
-            document.getElementById('timer-display').innerText = formatTime(elapsedSeconds); 
-        }, 1000); 
-    }
-    function stopTimer() { clearInterval(timerInterval); }
-    function resetTimer() { stopTimer(); elapsedSeconds = 0; if(document.getElementById('timer-display')) document.getElementById('timer-display').innerText = "00:00:00"; }
-
-    // --- Project Management Functions ---
+    // --- Dynamic Renderers ---
     function renderProjectList() {
         const list = document.getElementById('project-list');
-        list.innerHTML = projects.map((p, i) => `
+        list.innerHTML = projects.length ? projects.map((p, i) => `
             <div class="card">
                 <b>${p.name}</b><br><small>Questions: ${p.questions.length}</small>
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <button class="btn-main" style="padding:8px;" onclick="editProject(${i})">View/Edit</button>
-                    <button class="btn-danger" style="padding:8px;" onclick="deleteProject(${i})">Delete</button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn-main" style="padding:10px;" onclick="editProject(${i})">Edit</button>
+                    <button class="btn-alt" style="padding:10px;" onclick="duplicateProject(${i})">Duplicate</button>
+                    <button class="btn-danger" style="padding:10px;" onclick="deleteProject(${i})">Delete</button>
                 </div>
-            </div>`).join('') || '<p style="text-align:center;">No projects created yet.</p>';
+            </div>`).join('') : '<div class="card">No projects found.</div>';
     }
 
-    function prepareNewProject() { currentEditProjIdx = -1; tempProject = { name: '', questions: [] }; document.getElementById('proj-name').value = ''; renderEditorPreview(); showView('view-editor'); }
+    function renderStartList() {
+        const list = document.getElementById('start-project-list');
+        list.innerHTML = projects.length ? projects.map((p, i) => `
+            <button class="btn-main" onclick="runInterview(${i})">${p.name}</button>
+        `).join('') : '<div class="card">No projects found.</div>';
+    }
 
-    function toggleOptionsUI() { document.getElementById('options-setup').style.display = (document.getElementById('q-type').value !== 'text') ? 'block' : 'none'; }
+    function renderReports() {
+        const list = document.getElementById('reports-list');
+        list.innerHTML = reports.length ? reports.map((r, i) => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>${r.name}</b><br><small>${r.date}</small></div>
+                <button class="btn-success" style="width:auto; padding:10px;" onclick="downloadReport(${i})">Get</button>
+            </div>`).join('') : '<div class="card">No records yet.</div>';
+    }
 
-    function addOptionInput(val = '') {
+    function renderLogs() {
+        document.getElementById('logs-list').innerHTML = logs.length ? 
+            logs.map(l => `<div class="card" style="font-size:0.85rem; padding:10px;">${l}</div>`).join('') : '<div class="card">Log is empty.</div>';
+    }
+
+    function renderSummary() {
+        document.getElementById('summary-content').innerHTML = `
+            <div class="card">
+                <h3>System Overview</h3>
+                <p><b>Projects:</b> ${projects.length}</p>
+                <p><b>Total Sessions:</b> ${reports.length}</p>
+                <p><b>Actions Logged:</b> ${logs.length}</p>
+            </div>`;
+    }
+
+    // --- Project Editor Logic ---
+    function prepareNewProject() {
+        currentEditProjIdx = -1;
+        tempProject = { name: '', questions: [], date: new Date().toLocaleDateString() };
+        document.getElementById('proj-name').value = '';
+        renderEditorPreview();
+        showView('view-editor');
+    }
+
+    function editProject(i) {
+        currentEditProjIdx = i;
+        tempProject = JSON.parse(JSON.stringify(projects[i]));
+        document.getElementById('proj-name').value = tempProject.name;
+        renderEditorPreview();
+        showView('view-editor');
+    }
+
+    function duplicateProject(i) {
+        let copy = JSON.parse(JSON.stringify(projects[i]));
+        copy.name += ` (${projects.length})`;
+        projects.push(copy);
+        localStorage.setItem('ct_projects', JSON.stringify(projects));
+        addLog(`Duplicated: ${projects[i].name}`);
+        renderProjectList();
+    }
+
+    function deleteProject(i) {
+        if(confirm("Are you sure to delete this project?")) {
+            addLog(`Deleted: ${projects[i].name}`);
+            projects.splice(i, 1);
+            localStorage.setItem('ct_projects', JSON.stringify(projects));
+            renderProjectList();
+        }
+    }
+
+    function toggleOptionsUI() { 
+        document.getElementById('options-setup').style.display = (document.getElementById('q-type').value !== 'text') ? 'block' : 'none'; 
+    }
+
+    function addOptionInput() {
         const div = document.createElement('div');
-        div.innerHTML = `<input type="text" class="opt-val" value="${val}" placeholder="Option Value">`;
+        div.innerHTML = `<input type="text" class="opt-val" placeholder="Option Value">`;
         document.getElementById('options-list').appendChild(div);
     }
 
@@ -257,36 +312,20 @@
 
     function renderEditorPreview() {
         document.getElementById('questions-preview').innerHTML = tempProject.questions.map((q, i) => `
-            <div class="card" style="padding:10px;">${i+1}. ${q.text} (${q.type})</div>
+            <div class="card" style="padding:10px;">${i+1}. ${q.text}</div>
         `).join('');
     }
 
     function saveProject() {
-        const name = document.getElementById('proj-name').value || "Unnamed Project";
-        tempProject.name = name;
-        projects.push(tempProject);
+        tempProject.name = document.getElementById('proj-name').value || "Unnamed Project";
+        if(currentEditProjIdx > -1) projects[currentEditProjIdx] = tempProject;
+        else projects.push(tempProject);
         localStorage.setItem('ct_projects', JSON.stringify(projects));
-        addLog(`New project created: ${name}`);
+        addLog(`Saved Project: ${tempProject.name}`);
         showView('view-settings');
     }
 
-    function deleteProject(i) {
-        if(confirm("Are you sure to delete this project?")) {
-            addLog(`Deleted project: ${projects[i].name}`);
-            projects.splice(i, 1);
-            localStorage.setItem('ct_projects', JSON.stringify(projects));
-            renderProjectList();
-        }
-    }
-
     // --- Interview Execution ---
-    function renderStartList() {
-        const list = document.getElementById('start-project-list');
-        list.innerHTML = projects.length ? 
-            projects.map((p, i) => `<button class="btn-main" onclick="runInterview(${i})">${p.name}</button>`).join('') :
-            '<p style="text-align:center;">No projects found.</p>';
-    }
-
     function runInterview(idx) {
         const active = projects[idx];
         activeProjectQuestions = active.questions;
@@ -294,7 +333,7 @@
         
         const container = document.getElementById('interview-questions');
         container.innerHTML = active.questions.map((q, i) => {
-            let input = `<textarea class="ans-in" data-idx="${i}" placeholder="Enter notes..."></textarea>`;
+            let input = `<textarea class="ans-in" data-idx="${i}" placeholder="Notes..."></textarea>`;
             if(q.type !== 'text') {
                 input = q.options.map(opt => `
                     <label class="choice-row">
@@ -303,12 +342,23 @@
                     </label>
                 `).join('');
             }
-            return `<div class="card"><b>${i+1}. ${q.text}</b><br>${input}</div>`;
+            return `<div class="card"><b>${i+1}. ${q.text}</b><div style="margin-top:10px;">${input}</div></div>`;
         }).join('');
         showView('view-interview');
     }
 
-    // --- Audio and Finish ---
+    // --- Timer & Audio Logic ---
+    function formatTime(s) { return new Date(s * 1000).toISOString().substr(11, 8); }
+    function startTimer() { 
+        startTime = Date.now() - (elapsedSeconds * 1000); 
+        timerInterval = setInterval(() => { 
+            elapsedSeconds = Math.floor((Date.now() - startTime) / 1000); 
+            document.getElementById('timer-display').innerText = formatTime(elapsedSeconds); 
+        }, 1000); 
+    }
+    function stopTimer() { clearInterval(timerInterval); }
+    function resetTimer() { stopTimer(); elapsedSeconds = 0; if(document.getElementById('timer-display')) document.getElementById('timer-display').innerText = "00:00:00"; }
+
     async function startAudio() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -317,17 +367,17 @@
             mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
             mediaRecorder.start();
             startTimer();
-            document.getElementById('recordStatus').innerText = "● RECORDING SESSION";
+            document.getElementById('recordStatus').innerText = "● RECORDING";
             document.getElementById('recordStatus').classList.add('blink');
             document.getElementById('btnRecStart').disabled = true;
             document.getElementById('btnRecStop').disabled = false;
-        } catch (e) { alert("Microphone access is required for audio recording."); }
+        } catch (e) { alert("Mic access denied."); }
     }
 
     function stopAudio() {
         if(mediaRecorder) mediaRecorder.stop();
         stopTimer();
-        document.getElementById('recordStatus').innerText = "Recording Stopped";
+        document.getElementById('recordStatus').innerText = "Stopped";
         document.getElementById('recordStatus').classList.remove('blink');
         document.getElementById('btnRecStart').disabled = false;
         document.getElementById('btnRecStop').disabled = true;
@@ -336,29 +386,34 @@
     function finishInterview() {
         const activeName = document.getElementById('active-p-name').innerText;
         const dur = document.getElementById('timer-display').innerText;
-        let reportText = `CORRIDOR TEST REPORT\nProject: ${activeName}\nDate: ${new Date().toLocaleString()}\nDuration: ${dur}\n\n`;
+        let reportText = `REPORT: ${activeName}\nDATE: ${new Date().toLocaleString()}\nDURATION: ${dur}\n\n`;
 
         activeProjectQuestions.forEach((q, i) => {
             reportText += `Q${i+1}: ${q.text}\n`;
             if(q.type === 'text') {
                 const val = document.querySelector(`textarea[data-idx="${i}"]`).value;
-                reportText += `A: ${val || "[No Notes]"}\n`;
+                reportText += `A: ${val || "[No notes]"}\n`;
             } else {
-                const sel = Array.from(document.querySelectorAll(`input[data-idx="${i}"]:checked`)).map(e => e.value);
-                reportText += `A: ${sel.join(', ') || "[No Selection]"}\n`;
+                const checked = Array.from(document.querySelectorAll(`input[data-idx="${i}"]:checked`)).map(e => e.value);
+                reportText += `A: ${checked.join(', ') || "[No selection]"}\n`;
             }
             reportText += `--------------------------\n`;
         });
 
         reports.push({ name: activeName, date: new Date().toLocaleString(), content: reportText });
         localStorage.setItem('ct_reports', JSON.stringify(reports));
-        addLog(`Interview Completed: ${activeName}`);
+        addLog(`Finished Interview: ${activeName}`);
 
-        downloadFile(new Blob([reportText], {type:'text/plain'}), `Record_${activeName.replace(/ /g, '_')}.txt`);
+        downloadFile(new Blob([reportText], {type:'text/plain'}), `Record_${activeName.replace(/ /g,'_')}.txt`);
         if(audioChunks.length > 0) {
-            downloadFile(new Blob(audioChunks, {type:'audio/webm'}), `Audio_${activeName.replace(/ /g, '_')}.webm`);
+            downloadFile(new Blob(audioChunks, {type:'audio/webm'}), `Audio_${activeName.replace(/ /g,'_')}.webm`);
         }
         showView('view-thanks');
+    }
+
+    function downloadReport(i) {
+        const r = reports[i];
+        downloadFile(new Blob([r.content], {type:'text/plain'}), `Record_${r.name}.txt`);
     }
 
     function downloadFile(blob, name) {
@@ -366,32 +421,6 @@
         const a = document.createElement('a');
         a.href = url; a.download = name; a.click();
         setTimeout(() => URL.revokeObjectURL(url), 100);
-    }
-
-    // --- Records, Logs, and Summary Renderers ---
-    function renderReports() {
-        const list = document.getElementById('reports-list');
-        list.innerHTML = reports.map((r, i) => `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div><b>${r.name}</b><br><small>${r.date}</small></div>
-                <button class="btn-success" style="width:auto; padding:8px 12px;" onclick="downloadFile(new Blob([reports[${i}].content],{type:'text/plain'}), 'Record_${r.name}.txt')">Get</button>
-            </div>`).join('') || '<p style="text-align:center;">No records saved.</p>';
-    }
-
-    function renderLogs() {
-        const list = document.getElementById('logs-list');
-        list.innerHTML = logs.map(l => `<div class="card" style="padding:10px; font-size:0.85rem;">${l}</div>`).join('') || '<p style="text-align:center;">Log is empty.</p>';
-    }
-
-    function renderSummary() {
-        const cont = document.getElementById('summary-content');
-        cont.innerHTML = `
-            <div class="card">
-                <h3>Activity Overview</h3>
-                <p><b>Total Projects:</b> ${projects.length}</p>
-                <p><b>Interviews Conducted:</b> ${reports.length}</p>
-                <p><b>Total Logs Recorded:</b> ${logs.length}</p>
-            </div>`;
     }
 </script>
 
