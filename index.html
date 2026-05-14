@@ -100,7 +100,6 @@
     <button class="btn-back" onclick="showView('view-settings')">← Cancel</button>
     <h2 id="editor-head">Project Editor</h2>
     <input type="text" id="proj-name" placeholder="Project Name">
-    
     <div class="card">
         <h4 id="q-editor-mode" style="margin:0;">Add/Edit Question</h4>
         <input type="text" id="q-text" placeholder="Question Text">
@@ -115,18 +114,29 @@
         </div>
         <button id="add-q-btn" class="btn-main" onclick="addOrUpdateQuestion()" style="margin-top:15px;">Save Question to List</button>
     </div>
-
     <div id="questions-preview"></div>
-    <button class="btn-success" onclick="saveProject()" style="margin-top:20px;">Finalize & Save Project</button>
+    <button class="btn-success" onclick="saveProject()">Finalize & Save Project</button>
+</div>
+
+<!-- CHOOSE PROJECT LIST -->
+<div id="view-projects-start" class="view">
+    <button class="btn-back" onclick="showView('view-main')">← Back Home</button>
+    <h2>Choose Project</h2>
+    <div id="start-project-list"></div>
 </div>
 
 <!-- INTERVIEW INTERFACE -->
 <div id="view-interview" class="view" style="padding-bottom: 0;">
+    <!-- Added Back Button here -->
+    <button class="btn-back" onclick="showView('view-projects-start')">← Back to Projects</button>
+    
     <h3 id="active-p-name" style="text-align:center;"></h3>
     <div id="timer-display">00:00:00</div>
     <div id="recordStatus" style="text-align:center; font-weight:bold; font-size:0.8rem; margin-bottom:10px;">Ready</div>
+    
     <div id="interview-questions"></div>
     <div class="footer-spacer"></div>
+
     <div class="sticky-controls">
         <div style="display:flex; gap:10px;">
             <button id="btnRecStart" class="btn-danger" onclick="startAudio()">⏺ Start Now</button>
@@ -136,43 +146,33 @@
     </div>
 </div>
 
-<!-- CHOOSE PROJECT -->
-<div id="view-projects-start" class="view">
-    <button class="btn-back" onclick="showView('view-main')">← Back</button>
-    <h2>Choose Project</h2>
-    <div id="start-project-list"></div>
-</div>
-
 <!-- THANK YOU PAGE -->
 <div id="view-thanks" class="view">
     <div class="card" style="text-align:center; padding:60px 20px;">
         <h1 style="color:var(--success); font-size:3rem; margin:0;">✔</h1>
         <h2>Finished!</h2>
-        <p>The audio and notes have been downloaded.</p>
+        <p>Your session record and audio have been downloaded.</p>
         <button class="btn-main" onclick="showView('view-main')">Return Home</button>
     </div>
 </div>
 
-<!-- RECORD, LOG, SUMMARY VIEWS -->
+<!-- RECORD, LOG, SUMMARY -->
 <div id="view-reports" class="view"> <button class="btn-back" onclick="showView('view-main')">← Back</button> <h2>Record</h2> <div id="reports-list"></div> </div>
 <div id="view-logs" class="view"> <button class="btn-back" onclick="showView('view-main')">← Back</button> <h2>Log</h2> <div id="logs-list"></div> </div>
 <div id="view-summary" class="view"> <button class="btn-back" onclick="showView('view-main')">← Back</button> <h2>Summary</h2> <div id="summary-content"></div> </div>
 
 <script>
-    // --- Global State ---
     let projects = JSON.parse(localStorage.getItem('ct_projects')) || [];
     let reports = JSON.parse(localStorage.getItem('ct_reports')) || [];
     let logs = JSON.parse(localStorage.getItem('ct_logs')) || [];
     let currentEditProjIdx = -1;
     let currentEditQuesIdx = -1;
     let tempProject = { name: '', questions: [] };
-    
     let mediaRecorder;
     let audioChunks = [];
     let startTime, timerInterval, elapsedSeconds = 0;
     let activeProjectQuestions = [];
 
-    // --- Core Navigation ---
     function showView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -181,7 +181,12 @@
         if(id === 'view-reports') renderReports();
         if(id === 'view-logs') renderLogs();
         if(id === 'view-summary') renderSummary();
-        if(id !== 'view-interview') resetTimer();
+        
+        // Reset timer and state when leaving the interview or project list
+        if(id !== 'view-interview') {
+            resetTimer();
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') stopAudio();
+        }
         window.scrollTo(0,0);
     }
 
@@ -190,143 +195,102 @@
         localStorage.setItem('ct_logs', JSON.stringify(logs.slice(0, 50)));
     }
 
-    // --- Project Editor Enhancements ---
-    function prepareNewProject() {
-        currentEditProjIdx = -1;
-        currentEditQuesIdx = -1;
-        tempProject = { name: '', questions: [] };
-        document.getElementById('proj-name').value = '';
-        renderEditorPreview();
-        showView('view-editor');
+    // --- Audio & Timer ---
+    async function startAudio() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+            mediaRecorder.start();
+            startTimer();
+            document.getElementById('recordStatus').innerText = "● RECORDING";
+            document.getElementById('recordStatus').classList.add('blink');
+            document.getElementById('btnRecStart').disabled = true;
+            document.getElementById('btnRecStop').disabled = false;
+        } catch (err) { alert("Mic access denied."); }
     }
 
-    function editProject(i) {
-        currentEditProjIdx = i;
-        currentEditQuesIdx = -1;
-        tempProject = JSON.parse(JSON.stringify(projects[i]));
-        document.getElementById('proj-name').value = tempProject.name;
-        renderEditorPreview();
-        showView('view-editor');
+    function stopAudio() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            stopTimer();
+            document.getElementById('recordStatus').innerText = "Stopped";
+            document.getElementById('recordStatus').classList.remove('blink');
+            document.getElementById('btnRecStart').disabled = false;
+            document.getElementById('btnRecStop').disabled = true;
+        }
     }
 
+    function startTimer() {
+        startTime = Date.now() - (elapsedSeconds * 1000);
+        timerInterval = setInterval(() => {
+            elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer-display').innerText = formatTime(elapsedSeconds);
+        }, 1000);
+    }
+    function stopTimer() { clearInterval(timerInterval); }
+    function resetTimer() { 
+        stopTimer(); 
+        elapsedSeconds = 0; 
+        if(document.getElementById('timer-display')) document.getElementById('timer-display').innerText = "00:00:00";
+        if(document.getElementById('recordStatus')) document.getElementById('recordStatus').innerText = "Ready";
+    }
+    function formatTime(s) { return new Date(s * 1000).toISOString().substr(11, 8); }
+
+    // --- Project Engine ---
+    function renderProjectList() {
+        document.getElementById('project-list').innerHTML = projects.map((p, i) => `
+            <div class="card">
+                <b>${p.name}</b><br><div style="display:flex; gap:5px; margin-top:10px;">
+                <button class="btn-main" onclick="editProject(${i})">Edit</button>
+                <button class="btn-danger" onclick="deleteProject(${i})">Delete</button></div>
+            </div>`).join('') || '<p>No projects.</p>';
+    }
+
+    function prepareNewProject() { currentEditProjIdx = -1; tempProject = { name: '', questions: [] }; document.getElementById('proj-name').value = ''; renderEditorPreview(); showView('view-editor'); }
+    function editProject(i) { currentEditProjIdx = i; tempProject = JSON.parse(JSON.stringify(projects[i])); document.getElementById('proj-name').value = tempProject.name; renderEditorPreview(); showView('view-editor'); }
+    
     function addOrUpdateQuestion() {
         const text = document.getElementById('q-text').value;
         const type = document.getElementById('q-type').value;
         if(!text) return;
-
         let options = [];
-        if(type !== 'text') {
-            document.querySelectorAll('.opt-val').forEach(i => { if(i.value) options.push(i.value) });
-        }
-
-        const qData = { text, type, options, disabled: false };
-
-        if(currentEditQuesIdx > -1) {
-            // Update existing question
-            qData.disabled = tempProject.questions[currentEditQuesIdx].disabled;
-            tempProject.questions[currentEditQuesIdx] = qData;
-            currentEditQuesIdx = -1;
-            document.getElementById('add-q-btn').innerText = "Save Question to List";
-        } else {
-            // Add new question
-            tempProject.questions.push(qData);
-        }
-
-        renderEditorPreview();
-        document.getElementById('q-text').value = '';
-        document.getElementById('options-list').innerHTML = '';
-        document.getElementById('options-setup').style.display = 'none';
+        if(type !== 'text') document.querySelectorAll('.opt-val').forEach(i => { if(i.value) options.push(i.value) });
+        if(currentEditQuesIdx > -1) { tempProject.questions[currentEditQuesIdx] = {text, type, options, disabled: false}; currentEditQuesIdx = -1; }
+        else { tempProject.questions.push({text, type, options, disabled: false}); }
+        renderEditorPreview(); document.getElementById('q-text').value = ''; document.getElementById('options-list').innerHTML = '';
     }
 
     function renderEditorPreview() {
-        const cont = document.getElementById('questions-preview');
-        cont.innerHTML = '<h4 style="margin-top:20px;">Question Sequence:</h4>';
-        tempProject.questions.forEach((q, i) => {
-            const opacity = q.disabled ? '0.5' : '1';
-            cont.innerHTML += `
-                <div class="card" style="opacity:${opacity}; border-left: 4px solid ${q.disabled ? '#ccc' : 'var(--primary)'}">
-                    <p style="margin-top:0;"><b>${i+1}. ${q.text}</b> <small>(${q.type})</small></p>
-                    <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                        <button class="btn-main" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="loadQForEdit(${i})">Edit</button>
-                        <button class="btn-alt" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="moveQ(${i}, -1)">↑ Up</button>
-                        <button class="btn-alt" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="moveQ(${i}, 1)">↓ Down</button>
-                        <button style="width:auto; padding:5px 10px; font-size:0.7rem; background:#64748b;" onclick="toggleQ(${i})">${q.disabled ? 'Enable' : 'Disable'}</button>
-                        <button class="btn-danger" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="removeQ(${i})">Del</button>
-                    </div>
-                </div>`;
-        });
+        document.getElementById('questions-preview').innerHTML = tempProject.questions.map((q, i) => `
+            <div class="card item-row" style="opacity:${q.disabled ? '0.5' : '1'}">
+                <span>${i+1}. ${q.text}</span>
+                <div style="display:flex; gap:5px;"><button onclick="loadQForEdit(${i})" class="btn-main" style="width:auto; padding:5px;">Edit</button>
+                <button onclick="removeQ(${i})" class="btn-danger" style="width:auto; padding:5px;">X</button></div>
+            </div>`).join('');
     }
-
-    function loadQForEdit(i) {
-        currentEditQuesIdx = i;
-        const q = tempProject.questions[i];
-        document.getElementById('q-text').value = q.text;
-        document.getElementById('q-type').value = q.type;
-        toggleOptionsUI();
-        document.getElementById('options-list').innerHTML = '';
-        if(q.options) q.options.forEach(opt => addOptionInput(opt));
-        document.getElementById('add-q-btn').innerText = "Update Question " + (i+1);
-        window.scrollTo(0,0);
-    }
-
-    function moveQ(index, dir) {
-        let target = index + dir;
-        if(target < 0 || target >= tempProject.questions.length) return;
-        [tempProject.questions[index], tempProject.questions[target]] = [tempProject.questions[target], tempProject.questions[index]];
-        renderEditorPreview();
-    }
-
-    function toggleQ(i) { tempProject.questions[i].disabled = !tempProject.questions[i].disabled; renderEditorPreview(); }
-    function removeQ(i) { if(confirm("Delete question?")) { tempProject.questions.splice(i, 1); renderEditorPreview(); } }
 
     function saveProject() {
-        tempProject.name = document.getElementById('proj-name').value || "Unnamed Project";
-        if(currentEditProjIdx > -1) {
-            projects[currentEditProjIdx] = tempProject;
-            addLog(`Updated project: ${tempProject.name}`);
-        } else {
-            projects.push(tempProject);
-            addLog(`New project: ${tempProject.name}`);
-        }
+        tempProject.name = document.getElementById('proj-name').value || "Unnamed";
+        if(currentEditProjIdx > -1) projects[currentEditProjIdx] = tempProject; else projects.push(tempProject);
         localStorage.setItem('ct_projects', JSON.stringify(projects));
         showView('view-settings');
     }
 
-    // --- Interview Logic (Filter Disabled) ---
+    function renderStartList() { document.getElementById('start-project-list').innerHTML = projects.map((p, i) => `<button class="btn-main" onclick="runInterview(${i})">${p.name}</button>`).join('') || '<p>No projects.</p>'; }
+
     function runInterview(idx) {
         const active = projects[idx];
         activeProjectQuestions = active.questions.filter(q => !q.disabled);
-        if(activeProjectQuestions.length === 0) return alert("No enabled questions!");
-        
         document.getElementById('active-p-name').innerText = active.name;
         document.getElementById('interview-questions').innerHTML = activeProjectQuestions.map((q, i) => {
             let input = `<textarea class="ans-in" data-idx="${i}" placeholder="Notes..."></textarea>`;
-            if(q.type !== 'text') {
-                input = q.options.map(opt => `<label class="choice-row"><input type="${q.type}" name="q${i}" value="${opt}" class="ans-in" data-idx="${i}"> <span>${opt}</span></label>`).join('');
-            }
+            if(q.type !== 'text') input = q.options.map(opt => `<label class="choice-row"><input type="${q.type}" name="q${i}" value="${opt}" class="ans-in" data-idx="${i}"> <span>${opt}</span></label>`).join('');
             return `<div class="card"><b>${i+1}. ${q.text}</b><br>${input}</div>`;
         }).join('');
         showView('view-interview');
     }
-
-    // --- Timer, Audio, and Remaining Helpers ---
-    function formatTime(s) { return new Date(s * 1000).toISOString().substr(11, 8); }
-    function startTimer() { startTime = Date.now() - (elapsedSeconds * 1000); timerInterval = setInterval(() => { elapsedSeconds = Math.floor((Date.now() - startTime) / 1000); document.getElementById('timer-display').innerText = formatTime(elapsedSeconds); }, 1000); }
-    function stopTimer() { clearInterval(timerInterval); }
-    function resetTimer() { stopTimer(); elapsedSeconds = 0; if(document.getElementById('timer-display')) document.getElementById('timer-display').innerText = "00:00:00"; }
-
-    async function startAudio() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.start();
-        startTimer();
-        document.getElementById('recordStatus').innerText = "● RECORDING";
-        document.getElementById('btnRecStart').disabled = true;
-        document.getElementById('btnRecStop').disabled = false;
-    }
-    function stopAudio() { if(mediaRecorder) mediaRecorder.stop(); stopTimer(); document.getElementById('btnRecStart').disabled = false; document.getElementById('btnRecStop').disabled = true; }
 
     function finishInterview() {
         const activeName = document.getElementById('active-p-name').innerText;
@@ -335,27 +299,26 @@
         activeProjectQuestions.forEach((q, i) => {
             txt += `Q${i+1}: ${q.text}\n`;
             if(q.type === 'text') txt += `A: ${document.querySelector(`textarea[data-idx="${i}"]`).value}\n`;
-            else {
-                const sel = Array.from(document.querySelectorAll(`input[data-idx="${i}"]:checked`)).map(e => e.value);
-                txt += `A: ${sel.join(', ') || 'No Selection'}\n`;
-            }
+            else { const sel = Array.from(document.querySelectorAll(`input[data-idx="${i}"]:checked`)).map(e => e.value); txt += `A: ${sel.join(', ') || 'None'}\n`; }
             txt += `-------------------\n`;
         });
         reports.push({ name: activeName, date: new Date().toLocaleString(), content: txt });
         localStorage.setItem('ct_reports', JSON.stringify(reports));
         downloadFile(new Blob([txt], {type:'text/plain'}), `Record_${activeName}.txt`);
+        if(audioChunks.length > 0) downloadFile(new Blob(audioChunks, {type:'audio/webm'}), `Audio_${activeName}.webm`);
         showView('view-thanks');
     }
 
-    function renderProjectList() { document.getElementById('project-list').innerHTML = projects.map((p, i) => `<div class="card"><b>${p.name}</b><div style="display:flex; gap:5px; margin-top:10px;"><button class="btn-main" onclick="editProject(${i})">Edit</button><button class="btn-danger" onclick="deleteProject(${i})">Delete</button></div></div>`).join('') || '<p>No projects.</p>'; }
-    function deleteProject(i) { if(confirm("Delete project?")) { projects.splice(i,1); localStorage.setItem('ct_projects', JSON.stringify(projects)); renderProjectList(); } }
-    function renderReports() { document.getElementById('reports-list').innerHTML = reports.map((r, i) => `<div class="card"><b>${r.name}</b><br><small>${r.date}</small></div>`).join('') || '<p>No records.</p>'; }
-    function renderLogs() { document.getElementById('logs-list').innerHTML = logs.map(l => `<div class="card" style="font-size:0.8rem; padding:10px;">${l}</div>`).join(''); }
-    function renderSummary() { document.getElementById('summary-content').innerHTML = `<div class="card">Projects: ${projects.length}<br>Records: ${reports.length}</div>`; }
+    // --- Helpers ---
     function toggleOptionsUI() { document.getElementById('options-setup').style.display = (document.getElementById('q-type').value !== 'text') ? 'block' : 'none'; }
     function addOptionInput(val = '') { const div = document.createElement('div'); div.innerHTML = `<input type="text" class="opt-val" value="${val}" placeholder="Option">`; document.getElementById('options-list').appendChild(div); }
-    function renderStartList() { document.getElementById('start-project-list').innerHTML = projects.map((p, i) => `<button class="btn-main" onclick="runInterview(${i})">${p.name}</button>`).join('') || '<p>No projects.</p>'; }
     function downloadFile(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); }
+    function renderReports() { document.getElementById('reports-list').innerHTML = reports.map((r, i) => `<div class="card item-row"><b>${r.name}</b><button onclick="downloadFile(new Blob([reports[${i}].content],{type:'text/plain'}),'Record_'+reports[${i}].name+'.txt')" class="btn-success" style="width:auto;">Get</button></div>`).join('') || '<p>No records.</p>'; }
+    function renderLogs() { document.getElementById('logs-list').innerHTML = logs.map(l => `<div class="card" style="font-size:0.8rem; padding:10px;">${l}</div>`).join(''); }
+    function renderSummary() { document.getElementById('summary-content').innerHTML = `<div class="card">Projects: ${projects.length}<br>Records: ${reports.length}</div>`; }
+    function deleteProject(i) { if(confirm("Delete?")) { projects.splice(i,1); localStorage.setItem('ct_projects', JSON.stringify(projects)); renderProjectList(); } }
+    function loadQForEdit(i) { currentEditQuesIdx = i; const q = tempProject.questions[i]; document.getElementById('q-text').value = q.text; document.getElementById('q-type').value = q.type; toggleOptionsUI(); document.getElementById('options-list').innerHTML = ''; if(q.options) q.options.forEach(opt => addOptionInput(opt)); document.getElementById('add-q-btn').innerText = "Update Question"; }
+    function removeQ(i) { tempProject.questions.splice(i,1); renderEditorPreview(); }
 </script>
 </body>
 </html>
